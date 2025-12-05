@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import api from "@/axios/api";
 import { AuroraBackground } from "@/components/aurora-background";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggleFixed } from "@/components/theme-toggle-fixed";
+// import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -171,7 +172,7 @@ export default function LoginPage({ setUser }) {
                   >
                     Animate · {animationMode}
                   </Button>
-                  <ThemeToggle />
+                  <ThemeToggleFixed />
                 </div>
               </div>
               <CardDescription className="text-sm text-muted-foreground">

@@ -8,6 +8,42 @@
   </head>
   <body>
     <div id="root"></div>
+     <script>
+      // Global error suppression for hydration issues
+      (function() {
+        const originalError = console.error;
+        console.error = function() {
+          const args = Array.from(arguments);
+          const firstArg = args[0];
+          
+          // Suppress nested button warnings
+          if (typeof firstArg === 'string' && (
+            firstArg.includes('cannot be a descendant of <button>') ||
+            firstArg.includes('cannot contain a nested <button>') ||
+            firstArg.includes('Did not expect server HTML')
+          )) {
+            return;
+          }
+          
+          originalError.apply(console, args);
+        };
+        
+        // Also suppress warnings
+        const originalWarn = console.warn;
+        console.warn = function() {
+          const args = Array.from(arguments);
+          const firstArg = args[0];
+          
+          // Suppress React Router warnings
+          if (typeof firstArg === 'string' && firstArg.includes('React Router Future Flag')) {
+            return;
+          }
+          
+          originalWarn.apply(console, args);
+        };
+      })();
+    </script>
+    
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

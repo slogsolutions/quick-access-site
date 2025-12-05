@@ -2,6 +2,7 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Role = require("../models/Role");
+const Log = require("../models/Log");
 
 const router = express.Router();
 
@@ -52,6 +53,7 @@ router.post("/register", async (req, res) => {
 });
 
 // Login
+// Login
 router.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -67,10 +69,27 @@ router.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user._id, role: user.role },
+      { userId: user._id, role: user.role, username: user.username },
       process.env.JWT_SECRET || "your-secret-key",
       { expiresIn: "7d" }
     );
+
+    // Log the login action
+    try {
+      const log = new Log({
+        userId: user._id,
+        username: user.username,
+        role: user.role,
+        action: "login",
+        details: `User logged in successfully`,
+        ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+        userAgent: req.headers['user-agent'] || ""
+      });
+      await log.save();
+    } catch (logError) {
+      console.error("Failed to create login log:", logError);
+      // Don't fail the login if logging fails
+    }
 
     res.json({
       token,
@@ -141,6 +160,22 @@ router.post("/register-user", verifyToken, async (req, res) => {
     const user = new User({ username, email, password, role });
     await user.save();
 
+    // Log user registration
+    try {
+      const log = new Log({
+        userId: req.user.userId, // Admin who created the user
+        username: req.user.username || "admin",
+        role: req.user.role,
+        action: "user_registered",
+        details: `Created new user: ${username} (${role})`,
+        ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+        userAgent: req.headers['user-agent'] || ""
+      });
+      await log.save();
+    } catch (logError) {
+      console.error("Failed to create registration log:", logError);
+    }
+
     res.status(201).json({
       message: "User created successfully",
       user: {
@@ -170,6 +205,32 @@ router.get("/users", verifyToken, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+// Logout (with logging)
+router.post("/logout", verifyToken, async (req, res) => {
+  try {
+    // Log the logout action
+    try {
+      const log = new Log({
+        userId: req.user.userId,
+        username: req.user.username || "Unknown",
+        role: req.user.role,
+        action: "logout",
+        details: "User logged out",
+        ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+        userAgent: req.headers['user-agent'] || ""
+      });
+      await log.save();
+    } catch (logError) {
+      console.error("Failed to create logout log:", logError);
+    }
+
+    res.json({ message: "Logged out successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 
 module.exports = router;
 module.exports.verifyToken = verifyToken;

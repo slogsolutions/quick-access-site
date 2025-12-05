@@ -7,6 +7,7 @@ const linkRoutes = require("./routes/links");
 const logoRoutes = require("./routes/logo");
 const roleRoutes = require("./routes/roles");
 const Role = require("./models/Role");
+const logRoutes = require("./routes/logs");
 
 dotenv.config();
 const app = express();
@@ -58,6 +59,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/links", linkRoutes);
 app.use("/api/logo", logoRoutes);
 app.use("/api/roles", roleRoutes);
+app.use("/api/logs", logRoutes);
 
 app.get("/test", (_, res) => {
   res.send("Server is Running");

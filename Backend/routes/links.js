@@ -1,6 +1,7 @@
 const express = require("express");
 const Link = require("../models/Link");
 const Role = require("../models/Role");
+const Log = require("../models/Log");
 const { verifyToken } = require("./auth");
 
 const router = express.Router();
@@ -56,6 +57,22 @@ router.post("/", verifyToken, async (req, res) => {
 
     await link.save();
     const populatedLink = await Link.findById(link._id).populate("createdBy", "username");
+
+    // Log link creation
+    try {
+      const log = new Log({
+        userId,
+        username: req.user.username || "Unknown",
+        role,
+        action: "link_added",
+        details: `Added link: ${title} (${url}) to category: ${category}`,
+        ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+        userAgent: req.headers['user-agent'] || ""
+      });
+      await log.save();
+    } catch (logError) {
+      console.error("Failed to create link log:", logError);
+    }
 
     res.status(201).json(populatedLink);
   } catch (error) {
@@ -120,12 +137,27 @@ router.delete("/:id", verifyToken, async (req, res) => {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
+    // Log link deletion before deleting
+    try {
+      const log = new Log({
+        userId,
+        username: req.user.username || "Unknown",
+        role,
+        action: "link_deleted",
+        details: `Deleted link: ${link.title} (${link.url})`,
+        ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+        userAgent: req.headers['user-agent'] || ""
+      });
+      await log.save();
+    } catch (logError) {
+      console.error("Failed to create deletion log:", logError);
+    }
+
     await Link.findByIdAndDelete(id);
     res.json({ message: "Link deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
-
 module.exports = router;
 

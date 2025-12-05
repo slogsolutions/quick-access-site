@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bookmark, Link, PlusCircle } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { AddRoleDialog } from "@/components/add-role-dialog";
+import { LogsButton } from "@/components/logs-button";
 
 const dedupeBySlug = (items = []) =>
   items.reduce((acc, item) => {
@@ -144,6 +145,10 @@ export default function DashboardPage({ user, setUser }) {
               Animate · {animationMode}
             </Button>
             <ThemeToggle />
+
+            {/* Add this line before your existing logout button */}
+            <LogsButton user={user} />
+
             <Button variant="ghost" onClick={handleLogout} className="text-red-300 hover:text-red-200">
               Logout
             </Button>
